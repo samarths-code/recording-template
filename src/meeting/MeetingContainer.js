@@ -1,0 +1,197 @@
+import React, { useState, useEffect, useRef, createRef, memo } from "react";
+import { Constants, useMeeting, useParticipant, usePubSub } from "@videosdk.live/react-sdk";
+import { BottomBar } from "./components/BottomBar";
+import { SidebarConatiner } from "../components/sidebar/SidebarContainer";
+import MemorizedParticipantView from "./components/ParticipantView";
+import { PresenterView } from "../components/PresenterView";
+import { nameTructed, trimSnackBarText } from "../utils/helper";
+import WaitingToJoinScreen from "../components/screens/WaitingToJoinScreen";
+import ConfirmBox from "../components/ConfirmBox";
+import useIsMobile from "../hooks/useIsMobile";
+import useIsTab from "../hooks/useIsTab";
+import { useMediaQuery } from "react-responsive";
+import { toast } from "react-toastify";
+import { useMeetingAppContext } from "../MeetingAppContextDef";
+import { MemoizedParticipant } from "../components/ParticipantGrid";
+import { ParticipantAudioPlayer } from "./components/AudioPlayer";
+
+export function MeetingContainer({
+  onMeetingLeave,
+  setIsMeetingLeft,
+}) {
+  const {
+    setSelectedMic,
+    setSelectedWebcam,
+    setSelectedSpeaker,
+  } = useMeetingAppContext();
+
+  const bottomBarHeight = 60;
+
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [localParticipantAllowedJoin, setLocalParticipantAllowedJoin] = useState(null);
+  const [meetingErrorVisible, setMeetingErrorVisible] = useState(false);
+  const [meetingError, setMeetingError] = useState(false);
+
+  const mMeetingRef = useRef();
+  const containerRef = createRef();
+  const containerHeightRef = useRef();
+  const containerWidthRef = useRef();
+
+  useEffect(() => {
+    containerHeightRef.current = containerHeight;
+    containerWidthRef.current = containerWidth;
+  }, [containerHeight, containerWidth]);
+
+  const isMobile = useIsMobile();
+  const isTab = useIsTab();
+  const isLGDesktop = useMediaQuery({ minWidth: 1024, maxWidth: 1439 });
+  const isXLDesktop = useMediaQuery({ minWidth: 1440 });
+
+  const sideBarContainerWidth = isXLDesktop
+    ? 400
+    : isLGDesktop
+      ? 360
+      : isTab
+        ? 320
+        : isMobile
+          ? 280
+          : 240;
+
+  useEffect(() => {
+    containerRef.current?.offsetHeight &&
+      setContainerHeight(containerRef.current.offsetHeight);
+    containerRef.current?.offsetWidth &&
+      setContainerWidth(containerRef.current.offsetWidth);
+
+    window.addEventListener("resize", ({ target }) => {
+      containerRef.current?.offsetHeight &&
+        setContainerHeight(containerRef.current.offsetHeight);
+      containerRef.current?.offsetWidth &&
+        setContainerWidth(containerRef.current.offsetWidth);
+    });
+  }, [containerRef]);
+
+  const _handleMeetingLeft = () => {
+    setIsMeetingLeft(true);
+  };
+
+  function onParticipantJoined(participant) {
+    // Change quality to low, med or high based on resolution
+    participant && participant.setQuality("high");
+  }
+
+
+  function onEntryResponded(participantId, name) {
+    if (mMeetingRef.current?.localParticipant?.id === participantId) {
+      if (name === "allowed") {
+        setLocalParticipantAllowedJoin(true);
+      } else {
+        setLocalParticipantAllowedJoin(false);
+        setTimeout(() => {
+          _handleMeetingLeft();
+        }, 3000);
+      }
+    }
+  }
+
+  function onMeetingJoined() {
+    console.log("onMeetingJoined");
+  }
+
+  function onMeetingLeft() {
+    setSelectedMic({ id: null, label: null })
+    setSelectedWebcam({ id: null, label: null })
+    setSelectedSpeaker({ id: null, label: null })
+    onMeetingLeave();
+  }
+
+
+  const mMeeting = useMeeting({
+    onParticipantJoined,
+    onEntryResponded,
+    onMeetingJoined,
+    onMeetingStateChanged: ({ state }) => {
+      toast(`Meeting is in ${state} state`, {
+        position: "bottom-left",
+        autoClose: 4000,
+        hideProgressBar: true,
+        closeButton: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+    },
+    onMeetingLeft,
+
+
+  });
+
+  const isPresenting = mMeeting.presenterId ? true : false;
+
+  useEffect(() => {
+    mMeetingRef.current = mMeeting;
+  }, [mMeeting]);
+
+  const tutorParticipantId = [...mMeeting.participants.values()].find((participant) => participant.metaData?.isTutor || participant.displayName === "Tutor")?.id;
+
+  return (
+    <div className="fixed inset-0">
+      <div ref={containerRef} className="h-full flex flex-col bg-gray-800">
+        {typeof localParticipantAllowedJoin === "boolean" ? (
+          localParticipantAllowedJoin ? (
+            <>
+              <div className={` flex flex-1 flex-row bg-gray-800 `}>
+                <div className={`flex flex-1 `}>
+                  {isPresenting ? (
+                    <PresenterView height={containerHeight - bottomBarHeight} />
+                  ) : null}
+                  {/* {isPresenting && isMobile ? (
+                    participantsData.map((participantId) => (
+                      <ParticipantMicStream key={participantId} participantId={participantId} />
+                    ))
+                  ) : (
+                    <MemorizedParticipantView isPresenting={isPresenting} />
+                  )} */}
+                  {
+                    [...mMeeting.participants.values()].filter((participant) => {
+                      return participant.id !== mMeeting.localParticipant.id && participant.mode == Constants.modes.SEND_AND_RECV;
+                    }).map((participant) => {
+                      console.log("participant", participant.displayName);
+                      return <ParticipantAudioPlayer key={participant.id} participantId={participant.id} />
+                    })
+                  }
+                  {tutorParticipantId && (
+                    <div
+                      className={
+                        isPresenting
+                          ? " fixed bottom-2 right-2 w-96 h-auto z-50 overflow-hidden rounded-lg shadow-lg border-2 border-gray-700 bg-gray-900"
+                          : "w-full h-full"
+                      }
+                    >
+                      <MemoizedParticipant participantId={tutorParticipantId} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <></>
+          )
+        ) : (
+          !mMeeting.isMeetingJoined && <WaitingToJoinScreen />
+        )}
+        <ConfirmBox
+          open={meetingErrorVisible}
+          successText="OKAY"
+          onSuccess={() => {
+            setMeetingErrorVisible(false);
+          }}
+          title={`Error Code: ${meetingError.code}`}
+          subTitle={meetingError.message}
+        />
+      </div>
+    </div>
+  );
+}
