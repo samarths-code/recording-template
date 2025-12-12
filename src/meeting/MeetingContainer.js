@@ -1,17 +1,11 @@
-import React, { useState, useEffect, useRef, createRef, memo } from "react";
-import { Constants, useMeeting, useParticipant, usePubSub } from "@videosdk.live/react-sdk";
-import { BottomBar } from "./components/BottomBar";
-import { SidebarConatiner } from "../components/sidebar/SidebarContainer";
-import MemorizedParticipantView from "./components/ParticipantView";
+import { useState, useEffect, useRef, createRef } from "react";
+import { Constants, useMeeting } from "@videosdk.live/react-sdk";
 import { PresenterView } from "../components/PresenterView";
-import { nameTructed, trimSnackBarText } from "../utils/helper";
 import WaitingToJoinScreen from "../components/screens/WaitingToJoinScreen";
 import ConfirmBox from "../components/ConfirmBox";
 import useIsMobile from "../hooks/useIsMobile";
 import useIsTab from "../hooks/useIsTab";
 import { useMediaQuery } from "react-responsive";
-import { toast } from "react-toastify";
-import { useMeetingAppContext } from "../MeetingAppContextDef";
 import { MemoizedParticipant } from "../components/ParticipantGrid";
 import { ParticipantAudioPlayer } from "./components/AudioPlayer";
 
@@ -19,11 +13,6 @@ export function MeetingContainer({
   onMeetingLeave,
   setIsMeetingLeft,
 }) {
-  const {
-    setSelectedMic,
-    setSelectedWebcam,
-    setSelectedSpeaker,
-  } = useMeetingAppContext();
 
   const bottomBarHeight = 60;
 
@@ -100,9 +89,6 @@ export function MeetingContainer({
   }
 
   function onMeetingLeft() {
-    setSelectedMic({ id: null, label: null })
-    setSelectedWebcam({ id: null, label: null })
-    setSelectedSpeaker({ id: null, label: null })
     onMeetingLeave();
   }
 
@@ -111,21 +97,7 @@ export function MeetingContainer({
     onParticipantJoined,
     onEntryResponded,
     onMeetingJoined,
-    onMeetingStateChanged: ({ state }) => {
-      toast(`Meeting is in ${state} state`, {
-        position: "bottom-left",
-        autoClose: 4000,
-        hideProgressBar: true,
-        closeButton: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
-    },
     onMeetingLeft,
-
-
   });
 
   const isPresenting = mMeeting.presenterId ? true : false;
@@ -135,7 +107,8 @@ export function MeetingContainer({
   }, [mMeeting]);
 
   const tutorParticipantId = [...mMeeting.participants.values()].find((participant) => participant.metaData?.isTutor || participant.displayName === "Tutor")?.id;
-
+  console.log("Tutor Participant Id ", tutorParticipantId)
+  console.log("Participants ", mMeeting.participants.keys())
   return (
     <div className="fixed inset-0">
       <div ref={containerRef} className="h-full flex flex-col bg-gray-800">
