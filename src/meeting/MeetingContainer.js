@@ -146,7 +146,7 @@ export function MeetingContainer({
                     <div
                       className={
                         isPresenting
-                          ? " fixed bottom-2 right-2 w-96 h-auto aspect-video z-50 overflow-hidden rounded-lg shadow-lg border-2 border-gray-700 bg-gray-900"
+                          ? " fixed bottom-2 right-2 w-96 h-auto z-50 overflow-hidden rounded-lg shadow-lg border-2 border-gray-700 bg-gray-900"
                           : "w-full h-full"
                       }
                     >
