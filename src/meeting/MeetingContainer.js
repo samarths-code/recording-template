@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createRef } from "react";
+import { useState, useEffect, useRef, createRef, useMemo } from "react";
 import { Constants, useMeeting } from "@videosdk.live/react-sdk";
 import { PresenterView } from "../components/PresenterView";
 import WaitingToJoinScreen from "../components/screens/WaitingToJoinScreen";
@@ -85,7 +85,7 @@ export function MeetingContainer({
   }
 
   function onMeetingJoined() {
-    console.log("onMeetingJoined");
+    setLocalParticipantAllowedJoin(true);
   }
 
   function onMeetingLeft() {
@@ -95,7 +95,7 @@ export function MeetingContainer({
 
   const mMeeting = useMeeting({
     onParticipantJoined,
-    onEntryResponded,
+    // onEntryResponded,
     onMeetingJoined,
     onMeetingLeft,
   });
@@ -106,13 +106,23 @@ export function MeetingContainer({
     mMeetingRef.current = mMeeting;
   }, [mMeeting]);
 
-  const tutorParticipantId = [...mMeeting.participants.values()].find((participant) => participant.metaData?.isTutor || participant.displayName === "Tutor")?.id;
-  console.log("Tutor Participant Id ", tutorParticipantId)
-  console.log("Participants ", mMeeting.participants.keys())
+  const tutorParticipantId = useMemo(() => {
+    const id = [...mMeeting.participants.values()].
+      find((participant) => participant.metaData?.isTutor || participant.displayName === "Tutor")?.id
+    return id;
+  },
+    [mMeeting.participants]
+  );
+
+  const audioParticipants = useMemo(() => {
+    return [...mMeeting.participants.values()].filter((participant) => {
+      return participant.id !== mMeeting.localParticipant.id && participant.mode == Constants.modes.SEND_AND_RECV;
+    });
+  }, [mMeeting.participants, mMeeting.localParticipant?.id]);
   return (
     <div className="fixed inset-0">
       <div ref={containerRef} className="h-full flex flex-col bg-gray-800">
-        {typeof localParticipantAllowedJoin === "boolean" ? (
+        {
           localParticipantAllowedJoin ? (
             <>
               <div className={` flex flex-1 flex-row bg-gray-800 `}>
@@ -128,10 +138,7 @@ export function MeetingContainer({
                     <MemorizedParticipantView isPresenting={isPresenting} />
                   )} */}
                   {
-                    [...mMeeting.participants.values()].filter((participant) => {
-                      return participant.id !== mMeeting.localParticipant.id && participant.mode == Constants.modes.SEND_AND_RECV;
-                    }).map((participant) => {
-                      console.log("participant", participant.displayName);
+                    audioParticipants.map((participant) => {
                       return <ParticipantAudioPlayer key={participant.id} participantId={participant.id} />
                     })
                   }
@@ -139,7 +146,7 @@ export function MeetingContainer({
                     <div
                       className={
                         isPresenting
-                          ? " fixed bottom-2 right-2 w-96 h-auto z-50 overflow-hidden rounded-lg shadow-lg border-2 border-gray-700 bg-gray-900"
+                          ? " fixed bottom-2 right-2 w-96 h-auto aspect-video z-50 overflow-hidden rounded-lg shadow-lg border-2 border-gray-700 bg-gray-900"
                           : "w-full h-full"
                       }
                     >
@@ -150,11 +157,8 @@ export function MeetingContainer({
               </div>
             </>
           ) : (
-            <></>
-          )
-        ) : (
-          !mMeeting.isMeetingJoined && <WaitingToJoinScreen />
-        )}
+            !mMeeting.isMeetingJoined && <WaitingToJoinScreen />
+          )}
         <ConfirmBox
           open={meetingErrorVisible}
           successText="OKAY"

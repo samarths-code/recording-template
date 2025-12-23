@@ -434,7 +434,7 @@ export function ParticipantView({ participantId }) {
   console.log(screenShareOn, mode)
   return mode == "SEND_AND_RECV" && !screenShareOn ? (
     <div
-      className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 h-[200px] w-[450px]"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
+      className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 w-full h-full aspect-video"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
     >
       {webcamOn ? (
         <VideoPlayer
@@ -462,7 +462,7 @@ export function ParticipantView({ participantId }) {
     </div>
   ) : mode == "SEND_AND_RECV" && screenShareOn && webcamOn ? (
     <div
-      className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 h-[200px] w-[450px]"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
+      className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 h-full w-full aspect-video"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
     >
       {webcamOn ? (
         <VideoPlayer
