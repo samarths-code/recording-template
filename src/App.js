@@ -54,7 +54,7 @@ function App() {
               webcamEnabled: false,
               name: participantName ? participantName : "recorder",
               multiStream: true,
-              signalingBaseUrl: "api.classplus.videosdk.live"
+              signalingBaseUrl: "api.classplus-prod.videosdk.live"
             }}
             token={token}
             reinitialiseMeetingOnConfigChange={true}

@@ -443,6 +443,7 @@ export function ParticipantView({ participantId }) {
           containerStyle={{
             height: "100%",
             width: "100%",
+            borderRadius: "4px",
           }}
           className="h-full"
           classNameVideo="h-full"
@@ -471,6 +472,7 @@ export function ParticipantView({ participantId }) {
           containerStyle={{
             height: "100%",
             width: "100%",
+            borderRadius: "4px",
           }}
           className="h-full"
           classNameVideo="h-full"

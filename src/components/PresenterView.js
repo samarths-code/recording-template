@@ -61,6 +61,7 @@ export function PresenterView({ height }) {
           containerStyle={{
             height: "100%",
             width: "100%",
+            borderRadius: "4px",
           }}
           className="h-full"
           classNameVideo="h-full"
