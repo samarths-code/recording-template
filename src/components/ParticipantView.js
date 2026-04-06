@@ -417,6 +417,8 @@ export function ParticipantView({ participantId }) {
 
   const { selectedSpeaker } = useMeetingAppContext();
   const micRef = useRef(null);
+  const containerRef = useRef(null);
+  const [videoDims, setVideoDims] = useState({ top: 0, left: 0, width: null });
 
   useEffect(() => {
     const isFirefox =
@@ -431,6 +433,45 @@ export function ParticipantView({ participantId }) {
       }
     }
   }, [selectedSpeaker]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateDims = () => {
+      if (!containerRef.current) return;
+      const videoEl = containerRef.current.querySelector('video');
+      if (!videoEl || !videoEl.videoWidth) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const videoRatio = videoEl.videoWidth / videoEl.videoHeight;
+      const elRatio = rect.width / rect.height;
+
+      let actualWidth, actualHeight;
+      if (videoRatio > elRatio) {
+        // Video is wider -> letterboxed (black bars top and bottom)
+        actualWidth = rect.width;
+        actualHeight = rect.width / videoRatio;
+      } else {
+        // Video is taller -> pillarboxed (black bars left and right)
+        actualHeight = rect.height;
+        actualWidth = rect.height * videoRatio;
+      }
+
+      setVideoDims({
+        top: (rect.height - actualHeight) / 2,
+        left: (rect.width - actualWidth) / 2,
+        width: actualWidth
+      });
+    };
+
+    const interval = setInterval(updateDims, 500);
+    window.addEventListener('resize', updateDims);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', updateDims);
+    };
+  }, [webcamOn]);
 
   const { messages } = usePubSub("USER_METADATA");
   const participantMessages = messages.filter(m => m.senderId === participantId);
@@ -452,18 +493,32 @@ export function ParticipantView({ participantId }) {
     }
   }
 
+  // Scale down the info box if the video frame gets too narrow.
+  // With stacked items, it naturally takes less width, so trigger scale down starting at 180px.
+  const scale = videoDims.width && videoDims.width < 180 ? videoDims.width / 180 : 1;
+
   const overlayBox = (
-    <div className="absolute bottom-2 left-2 z-50 bg-white/40 p-1.5 rounded flex items-center gap-2 backdrop-blur-sm pointer-events-none">
+    <div
+      className="absolute z-50 bg-white/40 p-1.5 rounded flex items-center gap-2 backdrop-blur-sm pointer-events-none"
+      style={{
+        bottom: `calc(${videoDims.top}px + 8px)`,
+        left: `calc(${videoDims.left}px + 8px)`,
+        maxWidth: videoDims.width ? `calc(${videoDims.width}px - 16px)` : "auto",
+        transform: `scale(${scale})`,
+        transformOrigin: "bottom left"
+      }}
+    >
       <img
         src="https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg"
         alt="PhonePe Logo"
-        className="h-5 w-auto"
+        className="h-5 w-auto shrink-0"
       />
-      <div className="flex flex-col text-[10px] leading-tight text-black-900 font-bold border-l border-gray-500 pl-2">
-        <span>Date: {dynamicData.date}</span>
-        <span>Time: {dynamicData.time}</span>
-        <span>Name: {displayName}</span>
-        <span>Lat: {dynamicData.lat}, Long: {dynamicData.long}</span>
+      <div className="flex flex-col text-[8px] leading-tight text-black font-bold border-l border-gray-500 pl-[0.25rem] overflow-hidden w-full">
+        <span className="truncate">Date: {dynamicData.date}</span>
+        <span className="truncate">Time: {dynamicData.time}</span>
+        <span className="truncate">Name: {displayName}</span>
+        <span className="truncate">Lat: {dynamicData.lat}</span>
+        <span className="truncate">Long: {dynamicData.long}</span>
       </div>
     </div>
   );
@@ -471,6 +526,7 @@ export function ParticipantView({ participantId }) {
   console.log(screenShareOn, mode)
   return mode == "SEND_AND_RECV" && !screenShareOn ? (
     <div
+      ref={containerRef}
       className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 w-96 h-auto aspect-video"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
     >
       {overlayBox}
@@ -501,6 +557,7 @@ export function ParticipantView({ participantId }) {
     </div>
   ) : mode == "SEND_AND_RECV" && screenShareOn && webcamOn ? (
     <div
+      ref={containerRef}
       className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 h-full w-96 aspect-video"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
     >
       {overlayBox}
