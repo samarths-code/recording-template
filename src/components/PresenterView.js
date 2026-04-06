@@ -39,7 +39,9 @@ export function PresenterView({ height }) {
           err.message ===
           "play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD"
         ) {
-          console.error("audio" + err.message);
+          console.log("audio " + err.message);
+        } else {
+          console.log("audio catch", err);
         }
       });
     } else {

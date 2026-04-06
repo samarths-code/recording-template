@@ -6,7 +6,7 @@ import ConfirmBox from "../components/ConfirmBox";
 import useIsMobile from "../hooks/useIsMobile";
 import useIsTab from "../hooks/useIsTab";
 import { useMediaQuery } from "react-responsive";
-import { MemoizedParticipant } from "../components/ParticipantGrid";
+import MemorizedParticipantView from "./components/ParticipantView";
 import { ParticipantAudioPlayer } from "./components/AudioPlayer";
 
 export function MeetingContainer({
@@ -106,13 +106,7 @@ export function MeetingContainer({
     mMeetingRef.current = mMeeting;
   }, [mMeeting]);
 
-  const tutorParticipantId = useMemo(() => {
-    const id = [...mMeeting.participants.values()].
-      find((participant) => participant.metaData?.isTutor || participant.displayName === "Tutor")?.id
-    return id;
-  },
-    [mMeeting.participants]
-  );
+
 
   const audioParticipants = useMemo(() => {
     return [...mMeeting.participants.values()].filter((participant) => {
@@ -130,29 +124,12 @@ export function MeetingContainer({
                   {isPresenting ? (
                     <PresenterView height={containerHeight - bottomBarHeight} />
                   ) : null}
-                  {/* {isPresenting && isMobile ? (
-                    participantsData.map((participantId) => (
-                      <ParticipantMicStream key={participantId} participantId={participantId} />
-                    ))
-                  ) : (
-                    <MemorizedParticipantView isPresenting={isPresenting} />
-                  )} */}
+                  <MemorizedParticipantView isPresenting={isPresenting} />
                   {
                     audioParticipants.map((participant) => {
                       return <ParticipantAudioPlayer key={participant.id} participantId={participant.id} />
                     })
                   }
-                  {tutorParticipantId && (
-                    <div
-                      className={
-                        isPresenting
-                          ? " fixed bottom-2 right-2 w-96 h-auto z-50 overflow-hidden rounded-lg shadow-lg border-2 border-gray-700 bg-gray-900"
-                          : "w-full h-full"
-                      }
-                    >
-                      <MemoizedParticipant participantId={tutorParticipantId} />
-                    </div>
-                  )}
                 </div>
               </div>
             </>

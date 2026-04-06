@@ -15,28 +15,11 @@ function ParticipantGrid({ participantIds, isPresenting }) {
     "only screen and (max-width: 768px)"
   ).matches;
 
-  const perRow =
-    isMobile || isPresenting
-      ? participantIds.length < 4
-        ? 1
-        : participantIds.length < 9
-          ? 2
-          : 3
-      : participantIds.length < 5
-        ? 2
-        : participantIds.length < 7
-          ? 3
-          : participantIds.length < 9
-            ? 4
-            : participantIds.length < 10
-              ? 3
-              : participantIds.length < 11
-                ? 4
-                : 4;
+  const perRow = 1;
 
   return (
     <div
-      className={`flex flex-col md:flex-row flex-grow m-3 items-center justify-center ${participantIds.length < 2 && !sideBarMode && !isPresenting
+      className={`flex flex-col flex-grow m-3 items-center justify-center ${participantIds.length < 2 && !sideBarMode && !isPresenting
         ? "md:px-16 md:py-2"
         : participantIds.length < 3 && !sideBarMode && !isPresenting
           ? "md:px-16 md:py-8"

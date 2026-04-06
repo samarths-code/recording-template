@@ -28,7 +28,6 @@ function ParticipantsViewer({ isPresenting }) {
     );
 
     const ids = [
-      localParticipant.id,
       ...pinnedParticipantId,
       ...regularParticipantIds,
     ].slice(0, isPresenting ? 6 : 16);

@@ -1,6 +1,6 @@
 import { Popover, Transition } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { useParticipant, VideoPlayer } from "@videosdk.live/react-sdk";
+import { useParticipant, VideoPlayer, usePubSub } from "@videosdk.live/react-sdk";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 import useIsMobile from "../hooks/useIsMobile";
@@ -431,11 +431,49 @@ export function ParticipantView({ participantId }) {
       }
     }
   }, [selectedSpeaker]);
+
+  const { messages } = usePubSub("USER_METADATA");
+  const participantMessages = messages.filter(m => m.senderId === participantId);
+  const latestMessage = participantMessages[participantMessages.length - 1];
+
+  let dynamicData = {
+    date: "Fetching...",
+    time: "Fetching...",
+    lat: "Fetching...",
+    long: "Fetching..."
+  };
+
+  if (latestMessage) {
+    try {
+      const data = JSON.parse(latestMessage.message);
+      dynamicData = { ...dynamicData, ...data };
+    } catch (e) {
+      console.log("Error parsing pubsub data", e);
+    }
+  }
+
+  const overlayBox = (
+    <div className="absolute bottom-2 left-2 z-50 bg-white/40 p-1.5 rounded flex items-center gap-2 backdrop-blur-sm pointer-events-none">
+      <img
+        src="https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg"
+        alt="PhonePe Logo"
+        className="h-5 w-auto"
+      />
+      <div className="flex flex-col text-[10px] leading-tight text-black-900 font-bold border-l border-gray-500 pl-2">
+        <span>Date: {dynamicData.date}</span>
+        <span>Time: {dynamicData.time}</span>
+        <span>Name: {displayName}</span>
+        <span>Lat: {dynamicData.lat}, Long: {dynamicData.long}</span>
+      </div>
+    </div>
+  );
+
   console.log(screenShareOn, mode)
   return mode == "SEND_AND_RECV" && !screenShareOn ? (
     <div
       className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 w-96 h-auto aspect-video"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
     >
+      {overlayBox}
       {webcamOn ? (
         <VideoPlayer
           participantId={participantId} // Required
@@ -465,6 +503,7 @@ export function ParticipantView({ participantId }) {
     <div
       className={`${!screenShareOn ? "h-full w-full" : "absolute right-0 bottom-0 h-full w-96 aspect-video"}   bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
     >
+      {overlayBox}
       {webcamOn ? (
         <VideoPlayer
           participantId={participantId} // Required
