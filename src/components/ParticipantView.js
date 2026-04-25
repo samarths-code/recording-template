@@ -1,6 +1,6 @@
 import { Popover, Transition } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { useParticipant, VideoPlayer, usePubSub } from "@videosdk.live/react-sdk";
+import { useParticipant, VideoPlayer } from "@videosdk.live/react-sdk";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 import useIsMobile from "../hooks/useIsMobile";
@@ -35,12 +35,12 @@ export const CornerDisplayName = ({
 
   const statsBoxHeight = useMemo(
     () => statsBoxHeightRef?.offsetHeight,
-    [statsBoxHeightRef]
+    [statsBoxHeightRef],
   );
 
   const statsBoxWidth = useMemo(
     () => statsBoxWidthRef?.offsetWidth,
-    [statsBoxWidthRef]
+    [statsBoxWidthRef],
   );
 
   const analyzerSize = isXLDesktop
@@ -62,7 +62,7 @@ export const CornerDisplayName = ({
     getVideoStats,
     getAudioStats,
     getShareStats,
-    getShareAudioStats
+    getShareAudioStats,
   } = useParticipant(participantId);
 
   const statsIntervalIdRef = useRef();
@@ -76,7 +76,6 @@ export const CornerDisplayName = ({
     let videoStats = [];
     if (isPresenting) {
       stats = await getShareStats();
-
     } else if (webcamStream) {
       stats = await getVideoStats();
     } else if (micStream) {
@@ -85,7 +84,9 @@ export const CornerDisplayName = ({
 
     if (webcamStream || micStream || isPresenting) {
       videoStats = isPresenting ? await getShareStats() : await getVideoStats();
-      audioStats = isPresenting ? await getShareAudioStats() : await getAudioStats();
+      audioStats = isPresenting
+        ? await getShareAudioStats()
+        : await getAudioStats();
     }
 
     let score = stats
@@ -124,15 +125,15 @@ export const CornerDisplayName = ({
       audio: audioStats
         ? audioStats[0]?.packetsLost
           ? `${parseFloat(
-            (audioStats[0]?.packetsLost * 100) / audioStats[0]?.totalPackets
-          ).toFixed(2)}%`
+              (audioStats[0]?.packetsLost * 100) / audioStats[0]?.totalPackets,
+            ).toFixed(2)}%`
           : "-"
         : "-",
       video: videoStats
         ? videoStats[0]?.packetsLost
           ? `${parseFloat(
-            (videoStats[0]?.packetsLost * 100) / videoStats[0]?.totalPackets
-          ).toFixed(2)}%`
+              (videoStats[0]?.packetsLost * 100) / videoStats[0]?.totalPackets,
+            ).toFixed(2)}%`
           : "-"
         : "-",
     },
@@ -152,8 +153,8 @@ export const CornerDisplayName = ({
       audio: "-",
       video:
         videoStats &&
-          (videoStats[0]?.size?.framerate === null ||
-            videoStats[0]?.size?.framerate === undefined)
+        (videoStats[0]?.size?.framerate === null ||
+          videoStats[0]?.size?.framerate === undefined)
           ? "-"
           : `${videoStats ? videoStats[0]?.size?.framerate : "-"}`,
     },
@@ -178,8 +179,9 @@ export const CornerDisplayName = ({
         videoStats && !isLocal
           ? videoStats && videoStats[0]?.currentSpatialLayer === null
             ? "-"
-            : `S:${videoStats[0]?.currentSpatialLayer || 0} T:${videoStats[0]?.currentTemporalLayer || 0
-            }`
+            : `S:${videoStats[0]?.currentSpatialLayer || 0} T:${
+                videoStats[0]?.currentTemporalLayer || 0
+              }`
           : "-",
     },
     {
@@ -189,8 +191,9 @@ export const CornerDisplayName = ({
         videoStats && !isLocal
           ? videoStats && videoStats[0]?.preferredSpatialLayer === null
             ? "-"
-            : `S:${videoStats[0]?.preferredSpatialLayer || 0} T:${videoStats[0]?.preferredTemporalLayer || 0
-            }`
+            : `S:${videoStats[0]?.preferredSpatialLayer || 0} T:${
+                videoStats[0]?.preferredTemporalLayer || 0
+              }`
           : "-",
     },
   ];
@@ -326,12 +329,13 @@ export const CornerDisplayName = ({
                                       : "#FF5D5D",
                               }}
                             >
-                              <p className="text-sm text-white font-semibold">{`Quality Score : ${score > 7
-                                ? "Good"
-                                : score > 4
-                                  ? "Average"
-                                  : "Poor"
-                                }`}</p>
+                              <p className="text-sm text-white font-semibold">{`Quality Score : ${
+                                score > 7
+                                  ? "Good"
+                                  : score > 4
+                                    ? "Average"
+                                    : "Poor"
+                              }`}</p>
 
                               <button
                                 className="cursor-pointer text-white hover:bg-[#ffffff33] rounded-full px-1 text-center"
@@ -393,7 +397,7 @@ export const CornerDisplayName = ({
                             </div>
                           </div>
                         </div>,
-                        document.body
+                        document.body,
                       )}
                     </Popover.Panel>
                   </Transition>
@@ -408,21 +412,16 @@ export const CornerDisplayName = ({
 };
 
 export function ParticipantView({ participantId }) {
-  const {
-    displayName,
-    webcamOn,
-    mode,
-    screenShareOn,
-  } = useParticipant(participantId);
+  const { displayName, webcamOn, mode, screenShareOn } =
+    useParticipant(participantId);
 
-  const { selectedSpeaker } = useMeetingAppContext();
+  const { selectedSpeaker, participantMetadata } = useMeetingAppContext();
   const micRef = useRef(null);
   const containerRef = useRef(null);
   const [videoDims, setVideoDims] = useState({ top: 0, left: 0, width: null });
 
   useEffect(() => {
-    const isFirefox =
-      navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+    const isFirefox = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
     if (micRef.current) {
       try {
         if (!isFirefox) {
@@ -439,7 +438,7 @@ export function ParticipantView({ participantId }) {
 
     const updateDims = () => {
       if (!containerRef.current) return;
-      const videoEl = containerRef.current.querySelector('video');
+      const videoEl = containerRef.current.querySelector("video");
       if (!videoEl || !videoEl.videoWidth) return;
 
       const rect = containerRef.current.getBoundingClientRect();
@@ -460,42 +459,33 @@ export function ParticipantView({ participantId }) {
       setVideoDims({
         top: (rect.height - actualHeight) / 2,
         left: (rect.width - actualWidth) / 2,
-        width: actualWidth
+        width: actualWidth,
       });
     };
 
     const interval = setInterval(updateDims, 500);
-    window.addEventListener('resize', updateDims);
+    window.addEventListener("resize", updateDims);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('resize', updateDims);
+      window.removeEventListener("resize", updateDims);
     };
   }, [webcamOn]);
 
-  const { messages } = usePubSub("USER_METADATA");
-  const participantMessages = messages.filter(m => m.senderId === participantId);
-  const latestMessage = participantMessages[participantMessages.length - 1];
-
-  let dynamicData = {
+  // Derive dynamic overlay data from the shared metadata map in context.
+  // This is populated by the single usePubSub("USER_METADATA") in MeetingContainer.
+  const dynamicData = {
     date: "Fetching...",
     time: "Fetching...",
     lat: "Fetching...",
-    long: "Fetching..."
+    long: "Fetching...",
+    ...(participantMetadata?.[participantId] || {}),
   };
-
-  if (latestMessage) {
-    try {
-      const data = JSON.parse(latestMessage.message);
-      dynamicData = { ...dynamicData, ...data };
-    } catch (e) {
-      console.log("Error parsing pubsub data", e);
-    }
-  }
 
   // Scale down the info box if the video frame gets too narrow.
   // With stacked items, it naturally takes less width, so trigger scale down starting at 180px.
-  const scale = videoDims.width && videoDims.width < 180 ? videoDims.width / 180 : 1;
+  const scale =
+    videoDims.width && videoDims.width < 180 ? videoDims.width / 180 : 1;
 
   const overlayBox = (
     <div
@@ -503,9 +493,11 @@ export function ParticipantView({ participantId }) {
       style={{
         bottom: `calc(${videoDims.top}px + 8px)`,
         left: `calc(${videoDims.left}px + 8px)`,
-        maxWidth: videoDims.width ? `calc(${videoDims.width}px - 16px)` : "auto",
+        maxWidth: videoDims.width
+          ? `calc(${videoDims.width}px - 16px)`
+          : "auto",
         transform: `scale(${scale})`,
-        transformOrigin: "bottom left"
+        transformOrigin: "bottom left",
       }}
     >
       <img
@@ -517,13 +509,22 @@ export function ParticipantView({ participantId }) {
         <span className="truncate">Date: {dynamicData.date}</span>
         <span className="truncate">Time: {dynamicData.time}</span>
         <span className="truncate">Name: {displayName}</span>
-        <span className="truncate">Lat: {dynamicData.lat}</span>
-        <span className="truncate">Long: {dynamicData.long}</span>
+        <span className="truncate">
+          Lat:{" "}
+          {isNaN(dynamicData.lat)
+            ? dynamicData.lat
+            : parseFloat(dynamicData.lat).toFixed(4)}
+        </span>
+        <span className="truncate">
+          Long:{" "}
+          {isNaN(dynamicData.long)
+            ? dynamicData.long
+            : parseFloat(dynamicData.long).toFixed(4)}
+        </span>
       </div>
     </div>
   );
 
-  console.log(screenShareOn, mode)
   return mode == "SEND_AND_RECV" && !screenShareOn ? (
     <div
       ref={containerRef}

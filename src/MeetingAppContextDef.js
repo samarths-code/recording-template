@@ -6,13 +6,23 @@ export const useMeetingAppContext = () => useContext(MeetingAppContext);
 
 export const MeetingAppProvider = ({ children }) => {
   const [selectedMic, setSelectedMic] = useState({ id: null, label: null });
-  const [selectedWebcam, setSelectedWebcam] = useState({ id: null, label: null });
-  const [selectedSpeaker, setSelectedSpeaker] = useState({ id: null, label: null });
-  const [isCameraPermissionAllowed, setIsCameraPermissionAllowed] = useState(null);
-  const [isMicrophonePermissionAllowed, setIsMicrophonePermissionAllowed] = useState(null);
+  const [selectedWebcam, setSelectedWebcam] = useState({
+    id: null,
+    label: null,
+  });
+  const [selectedSpeaker, setSelectedSpeaker] = useState({
+    id: null,
+    label: null,
+  });
+  const [isCameraPermissionAllowed, setIsCameraPermissionAllowed] =
+    useState(null);
+  const [isMicrophonePermissionAllowed, setIsMicrophonePermissionAllowed] =
+    useState(null);
   const [raisedHandsParticipants, setRaisedHandsParticipants] = useState([]);
   const [sideBarMode, setSideBarMode] = useState(null);
   const [pipMode, setPipMode] = useState(false);
+  // participantId → { date, time, lat, long, ... } — populated by a single usePubSub
+  const [participantMetadata, setParticipantMetadata] = useState({});
 
   const useRaisedHandParticipants = () => {
     const raisedHandsParticipantsRef = useRef();
@@ -23,7 +33,7 @@ export const MeetingAppProvider = ({ children }) => {
       const newItem = { participantId, raisedHandOn: new Date().getTime() };
 
       const participantFound = raisedHandsParticipants.findIndex(
-        ({ participantId: pID }) => pID === participantId
+        ({ participantId: pID }) => pID === participantId,
       );
 
       if (participantFound === -1) {
@@ -69,6 +79,8 @@ export const MeetingAppProvider = ({ children }) => {
       value={{
         // states
 
+        participantMetadata,
+        setParticipantMetadata,
         raisedHandsParticipants,
         selectedMic,
         selectedWebcam,
