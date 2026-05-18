@@ -27,6 +27,7 @@ export function MeetingContainer({
   onMeetingLeave,
   setIsMeetingLeft,
   isPresenting,
+  meetingId,
 }) {
   const bottomBarHeight = 60;
 
@@ -100,9 +101,53 @@ export function MeetingContainer({
 
   const { setParticipantMetadata } = useMeetingAppContext();
 
+  const { publish: publishGeoAck } = usePubSub("GEO_ACK", {});
+
   function onMeetingJoined() {
     setLocalParticipantAllowedJoin(true);
   }
+
+  function applyGeoTag(payload, senderId) {
+    if (!payload || !senderId) return;
+    const ts = payload.timestamp ? new Date(payload.timestamp) : new Date();
+    const geoMeta = {
+      lat: payload.latitude,
+      long: payload.longitude,
+      date: ts.toLocaleDateString("en-IN"),
+      time: ts.toLocaleTimeString("en-IN"),
+    };
+    setParticipantMetadata((prev) => {
+      const updated = { ...prev };
+      // Apply to the sender (customer)
+      updated[senderId] = { ...(prev[senderId] || {}), ...geoMeta };
+      // Apply the same location to every other participant visible in the recording
+      // (e.g. the doctor) so all frames show the examination location.
+      const participants = mMeetingRef.current?.participants;
+      if (participants) {
+        for (const [pid] of participants) {
+          updated[pid] = { ...(prev[pid] || {}), ...geoMeta };
+        }
+      }
+      return updated;
+    });
+  }
+
+  // Subscribe to GEO_TAG published by the customer.
+  // On receipt: populate the lat/long overlay and acknowledge to the doctor's UI.
+  usePubSub("GEO_TAG", {
+    onMessageReceived: ({ payload, senderId }) => {
+      applyGeoTag(payload, senderId);
+      publishGeoAck("GEO_ACK", { persist: true }, { confirmed: true, senderId });
+    },
+    // Fires when recorder joins AFTER customer already published GEO_TAG (most common case).
+    // Must also publish GEO_ACK here so the doctor's toast fires even on late joins.
+    onOldMessagesReceived: (messages) => {
+      const latest = messages[messages.length - 1];
+      if (!latest) return;
+      applyGeoTag(latest.payload, latest.senderId);
+      publishGeoAck("GEO_ACK", { persist: true }, { confirmed: true, senderId: latest.senderId });
+    },
+  });
 
   function onMeetingLeft() {
     onMeetingLeave();

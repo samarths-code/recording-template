@@ -472,22 +472,16 @@ export function ParticipantView({ participantId }) {
     };
   }, [webcamOn]);
 
-  // Derive dynamic overlay data from the shared metadata map in context.
-  // This is populated by the single usePubSub("USER_METADATA") in MeetingContainer.
-  const dynamicData = {
-    date: "Fetching...",
-    time: "Fetching...",
-    lat: "Fetching...",
-    long: "Fetching...",
-    ...(participantMetadata?.[participantId] || {}),
-  };
+  const meta = participantMetadata?.[participantId] || {};
+  const hasGeoData = meta.lat != null && meta.long != null;
 
   // Scale down the info box if the video frame gets too narrow.
-  // With stacked items, it naturally takes less width, so trigger scale down starting at 180px.
   const scale =
     videoDims.width && videoDims.width < 180 ? videoDims.width / 180 : 1;
 
-  const overlayBox = (
+  // Only render the overlay for participants who have received geo data.
+  // Doctor's frame has no GEO_TAG so it shows nothing; customer's frame shows coordinates.
+  const overlayBox = hasGeoData ? (
     <div
       className="absolute z-50 bg-white/40 p-1.5 rounded flex items-center gap-2 backdrop-blur-sm pointer-events-none"
       style={{
@@ -501,29 +495,19 @@ export function ParticipantView({ participantId }) {
       }}
     >
       <img
-        src="https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg"
-        alt="PhonePe Logo"
-        className="h-5 w-auto shrink-0"
+        src="https://pbs.twimg.com/profile_images/1914205003444813824/qBoe4XIF_400x400.jpg"
+        alt="Tata 1mg"
+        className="h-5 w-5 rounded shrink-0 object-cover"
       />
       <div className="flex flex-col text-[8px] leading-tight text-black font-bold border-l border-gray-500 pl-[0.25rem] overflow-hidden w-full">
-        <span className="truncate">Date: {dynamicData.date}</span>
-        <span className="truncate">Time: {dynamicData.time}</span>
+        <span className="truncate">Date: {meta.date}</span>
+        <span className="truncate">Time: {meta.time}</span>
         <span className="truncate">Name: {displayName}</span>
-        <span className="truncate">
-          Lat:{" "}
-          {isNaN(dynamicData.lat)
-            ? dynamicData.lat
-            : parseFloat(dynamicData.lat).toFixed(4)}
-        </span>
-        <span className="truncate">
-          Long:{" "}
-          {isNaN(dynamicData.long)
-            ? dynamicData.long
-            : parseFloat(dynamicData.long).toFixed(4)}
-        </span>
+        <span className="truncate">Lat: {parseFloat(meta.lat).toFixed(4)}</span>
+        <span className="truncate">Long: {parseFloat(meta.long).toFixed(4)}</span>
       </div>
     </div>
-  );
+  ) : null;
 
   return mode == "SEND_AND_RECV" && !screenShareOn ? (
     <div

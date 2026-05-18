@@ -15,7 +15,7 @@ function ParticipantGrid({ participantIds, isPresenting }) {
     "only screen and (max-width: 768px)"
   ).matches;
 
-  const perRow = 1;
+  const perRow = 2;
 
   return (
     <div

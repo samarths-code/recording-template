@@ -21,17 +21,11 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlMeetingId = urlParams.get("meetingId");
     const urlToken = urlParams.get("token");
-
     const participantIdParam = urlParams.get("participantId");
-    if (urlMeetingId) {
-      setMeetingId(urlMeetingId);
-    }
-    if (urlToken) {
-      setToken(urlToken);
-    }
-    if (participantIdParam) {
-      setParticipantId(participantIdParam);
-    }
+
+    if (urlMeetingId) setMeetingId(urlMeetingId);
+    if (urlToken) setToken(urlToken);
+    if (participantIdParam) setParticipantId(participantIdParam);
   }, []);
 
   useEffect(() => {
@@ -67,6 +61,7 @@ function App() {
                 setParticipantName("");
               }}
               setIsMeetingLeft={setIsMeetingLeft}
+              meetingId={meetingId}
             />
           </MeetingProvider>
         ) : isMeetingLeft ? (
